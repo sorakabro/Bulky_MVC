@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Bulky.DataAccess.Repository.IRepository;
 using Bulky.DataAcess.Data;
 using Microsoft.EntityFrameworkCore;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 namespace Bulky.DataAccess.Repository
 {
@@ -25,24 +26,39 @@ namespace Bulky.DataAccess.Repository
 			dbSet.Add(entity);
 		}
 
-		public T Get(Expression<Func<T, bool>> filter, string? includeProperties = null)
+		public T Get(Expression<Func<T, bool>> filter, string? includeProperties = null, bool tracked = false)
 		{
-			IQueryable<T> query = dbSet;
-			query = query.Where(filter);
-			if (!string.IsNullOrEmpty(includeProperties))
-			{
-				foreach (var includeProperty in includeProperties.Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries))
-				{
-					query = query.Include(includeProperty);
-				}
-			}
-			return query.FirstOrDefault();
-		}
+			IQueryable<T> query;
 
-		public IEnumerable<T> GetAll(string? includeProperties = null)
+            if (tracked)
+			{
+				query = dbSet;
+				
+			} else
+			{
+				query = dbSet.AsNoTracking();
+            }
+
+            query = query.Where(filter);
+            if (!string.IsNullOrEmpty(includeProperties))
+            {
+                foreach (var includeProperty in includeProperties.Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries))
+                {
+                    query = query.Include(includeProperty);
+                }
+            }
+            return query.FirstOrDefault();
+        }
+
+		public IEnumerable<T> GetAll(Expression<Func<T, bool>>? filter, string? includeProperties = null)
 		{
 			IQueryable<T> query = dbSet;
-			if(!string.IsNullOrEmpty(includeProperties))
+			if(filter != null)
+			{
+                query = query.Where(filter);
+            }
+            
+            if (!string.IsNullOrEmpty(includeProperties))
 			{
 				foreach(var includeProperty in includeProperties.Split(new char[] {','}, StringSplitOptions.RemoveEmptyEntries)) {
 					query = query.Include(includeProperty);
