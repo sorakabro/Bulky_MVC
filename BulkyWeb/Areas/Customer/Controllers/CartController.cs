@@ -77,8 +77,8 @@ namespace BulkyWeb.Areas.Customer.Controllers
         [ActionName("Summary")]
 		public IActionResult SummaryPOST()
 		{
-			var claimsIdentity = (ClaimsIdentity)User.Identity;
-			var userId = claimsIdentity.FindFirst(ClaimTypes.NameIdentifier).Value;
+            var claimsIdentity = (ClaimsIdentity)User.Identity;
+            var userId = claimsIdentity.FindFirst(ClaimTypes.NameIdentifier).Value;
 
             ShoppingCartVM.ShoppingCartList = _unitOfWork.ShoppingCart.GetAll(u => u.ApplicationUserId == userId,
                 includeProperties: "Product");
@@ -86,33 +86,34 @@ namespace BulkyWeb.Areas.Customer.Controllers
             ShoppingCartVM.OrderHeader.OrderDate = System.DateTime.Now;
             ShoppingCartVM.OrderHeader.ApplicationUserId = userId;
 
-			ApplicationUser applicationUser = _unitOfWork.ApplicationUser.Get(u => u.Id == userId);
+            ApplicationUser applicationUser = _unitOfWork.ApplicationUser.Get(u => u.Id == userId);
 
-			foreach (var cart in ShoppingCartVM.ShoppingCartList)
-			{
-				cart.Price = GetPriceBasedOnQuantity(cart);
-				ShoppingCartVM.OrderHeader.OrderTotal += (cart.Price * cart.Count);
-			}
 
-            if(applicationUser.CompanyId.GetValueOrDefault()==0)
+            foreach (var cart in ShoppingCartVM.ShoppingCartList)
             {
-				// It is a regular customer account and we need to capture the payment
-				ShoppingCartVM.OrderHeader.PaymentStatus = SD.PaymentStatusPending;
-				ShoppingCartVM.OrderHeader.OrderStatus = SD.StatusPending;
+                cart.Price = GetPriceBasedOnQuantity(cart);
+                ShoppingCartVM.OrderHeader.OrderTotal += (cart.Price * cart.Count);
+            }
 
-            } else
+            if (applicationUser.CompanyId.GetValueOrDefault() == 0)
             {
-				// It is a company user
-				ShoppingCartVM.OrderHeader.PaymentStatus = SD.PaymentStatusDelayedPayment;
-				ShoppingCartVM.OrderHeader.OrderStatus = SD.StatusApproved;
-			}
+                //it is a regular customer 
+                ShoppingCartVM.OrderHeader.PaymentStatus = SD.PaymentStatusPending;
+                ShoppingCartVM.OrderHeader.OrderStatus = SD.StatusPending;
+            }
+            else
+            {
+                //it is a company user
+                ShoppingCartVM.OrderHeader.PaymentStatus = SD.PaymentStatusDelayedPayment;
+                ShoppingCartVM.OrderHeader.OrderStatus = SD.StatusApproved;
+            }
             _unitOfWork.OrderHeader.Add(ShoppingCartVM.OrderHeader);
             _unitOfWork.Save();
-            foreach(var cart in  ShoppingCartVM.ShoppingCartList)
+            foreach (var cart in ShoppingCartVM.ShoppingCartList)
             {
                 OrderDetail orderDetail = new()
                 {
-                    ProductId = cart.Id,
+                    ProductId = cart.ProductId,
                     OrderHeaderId = ShoppingCartVM.OrderHeader.Id,
                     Price = cart.Price,
                     Count = cart.Count
