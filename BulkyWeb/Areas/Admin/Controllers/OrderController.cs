@@ -18,12 +18,14 @@ namespace BulkyWeb.Areas.Admin.Controllers
 	{
 
 		private readonly IUnitOfWork _unitOfWork;
+		private readonly IConfiguration _config;
 		[BindProperty]
         public OrderVM OrderVM { get; set; }
 
-        public OrderController(IUnitOfWork unitOfWork)
+        public OrderController(IUnitOfWork unitOfWork, IConfiguration iConfig)
 		{
 			_unitOfWork = unitOfWork;
+			_config = iConfig;
 		}
 		public IActionResult Index()
 		{
@@ -134,8 +136,8 @@ namespace BulkyWeb.Areas.Admin.Controllers
             OrderVM.OrderDetail = _unitOfWork.OrderDetail.GetAll(u => u.OrderHeaderId == OrderVM.OrderHeader.Id, includeProperties: "Product");
 
             // Stripe logic 
-            var domain = "https://localhost:7105/";
-            var options = new Stripe.Checkout.SessionCreateOptions
+            var domain = _config.GetValue<string>("Domain");
+			var options = new Stripe.Checkout.SessionCreateOptions
             {
                 SuccessUrl = domain + $"admin/order/PaymentConfirmation?orderHeaderId={OrderVM.OrderHeader.Id}",
                 CancelUrl = domain + $"admin/order/details?orderId={OrderVM.OrderHeader.Id}",

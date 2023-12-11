@@ -17,12 +17,15 @@ namespace BulkyWeb.Areas.Customer.Controllers
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly EmailSender _emailSender;
-        [BindProperty]
+		private readonly IConfiguration _config;
+
+		[BindProperty]
         public ShoppingCartVM ShoppingCartVM { get; set; }
-        public CartController(IUnitOfWork unitOfWork, IEmailSender emailSender)
+        public CartController(IUnitOfWork unitOfWork, IEmailSender emailSender, IConfiguration iConfig)
         {
             _unitOfWork = unitOfWork;
             _emailSender = (EmailSender?)emailSender;
+			_config= iConfig;
 
 		}
 
@@ -128,10 +131,11 @@ namespace BulkyWeb.Areas.Customer.Controllers
 
             if (applicationUser.CompanyId.GetValueOrDefault() == 0)
             {
-                // It is a regular customer account and we need to capture the payment
-                // Stripe logic 
-                var domain = "https://localhost:7105/";
-                var options = new Stripe.Checkout.SessionCreateOptions
+				// It is a regular customer account and we need to capture the payment
+				// Stripe logic 
+
+				var domain = _config.GetValue<string>("Domain");
+				var options = new Stripe.Checkout.SessionCreateOptions
                 {
                     SuccessUrl = domain + $"customer/cart/OrderConfirmation?id={ShoppingCartVM.OrderHeader.Id}",
                     CancelUrl = domain + "customer/cart/index",
